@@ -23,9 +23,15 @@ final class GameScene: SKScene {
     private let statsPanel = BattleStatsPanel()
     private let statsStore = GameStatsStore()
     private var stats = GameStats()
+    private let onExitRequested: () -> Void
 
-    init(size: CGSize, scanner: DesktopScanning = DesktopScanner()) {
+    init(
+        size: CGSize,
+        scanner: DesktopScanning = DesktopScanner(),
+        onExitRequested: @escaping () -> Void = {}
+    ) {
         self.scanner = scanner
+        self.onExitRequested = onExitRequested
         let bounds = Rect(origin: Point(x: 0, y: 0), size: Size(width: size.width, height: size.height))
         map = MapModel(bounds: bounds)
         player = Tank(
@@ -72,6 +78,10 @@ final class GameScene: SKScene {
         updateOverlay("Paused")
     }
 
+    func startNewGame() {
+        resetBattle()
+    }
+
     override func keyDown(with event: NSEvent) {
         guard !event.isARepeat else {
             return
@@ -93,13 +103,13 @@ final class GameScene: SKScene {
         case "r":
             resetBattle()
         case "q":
-            NSApp.terminate(nil)
+            exitBattlefield()
         default:
             break
         }
 
         if event.keyCode == 53 {
-            NSApp.terminate(nil)
+            exitBattlefield()
         }
     }
 
@@ -321,6 +331,11 @@ final class GameScene: SKScene {
             isPlayer: true,
             reloadRemaining: rules.reloadDuration
         )
+    }
+
+    private func exitBattlefield() {
+        pauseGame()
+        onExitRequested()
     }
 
     private func togglePause() {

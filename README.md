@@ -10,10 +10,14 @@ obstacles, and updates the map while the game is running.
 - `J`: fire
 - `Space`: pause or resume
 - `R`: restart after victory or defeat
-- `Esc` or `Q`: quit
+- `Esc` or `Q`: close the battlefield overlay
 - `Command` + `Option` + `T`: show or hide the game overlay
 
-The top-left HUD shows the current state, remaining enemies, base health, color
+DeskTank runs as a menu bar app. Click the `DT` item in the macOS menu bar to
+see the combat record, start a new game, resume a hidden game, or quit the app.
+Quitting the app is only done from the menu bar.
+
+The in-game HUD shows the current state, remaining enemies, base health, color
 legend, and controls. The player tank is blue, enemy tanks are red, and the base
 is yellow. It also includes a persistent combat record with total kills, current
 run kills, wins, losses, and win rate. The HUD is part of the battlefield: tanks
@@ -47,6 +51,13 @@ swift test
 ```bash
 swift build
 ```
+
+## Distribution
+
+For development, run with SwiftPM. For sharing with other Mac users, package a
+signed `.app` bundle and distribute that app inside a `.dmg` installer image.
+The `.app` is the actual application; the `.dmg` is the convenient delivery
+container.
 
 ## Project Layout
 

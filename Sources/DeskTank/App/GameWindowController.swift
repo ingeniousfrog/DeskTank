@@ -5,9 +5,16 @@ import SpriteKit
 final class GameWindowController {
     private var window: NSWindow?
     private var gameScene: GameScene?
+    private var hasStartedGame = false
+
+    var onVisibilityChanged: (() -> Void)?
 
     var isVisible: Bool {
         window?.isVisible == true
+    }
+
+    var primaryActionTitle: String {
+        hasStartedGame ? "Resume" : "Start New Game"
     }
 
     func show() {
@@ -23,15 +30,27 @@ final class GameWindowController {
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         gameScene?.start()
+        hasStartedGame = true
+        onVisibilityChanged?()
     }
 
     func hide() {
         window?.orderOut(nil)
         gameScene?.pauseGame()
+        onVisibilityChanged?()
     }
 
     func toggle() {
         isVisible ? hide() : show()
+    }
+
+    func startNewGame() {
+        show()
+        gameScene?.startNewGame()
+    }
+
+    func resumeGame() {
+        show()
     }
 
     private func createWindow(screen: NSScreen) {
@@ -53,7 +72,9 @@ final class GameWindowController {
         skView.allowsTransparency = true
         skView.ignoresSiblingOrder = true
 
-        let scene = GameScene(size: screen.frame.size)
+        let scene = GameScene(size: screen.frame.size) { [weak self] in
+            self?.hide()
+        }
         scene.scaleMode = .resizeFill
         skView.presentScene(scene)
 
