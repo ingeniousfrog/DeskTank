@@ -19,10 +19,10 @@ final class GameScene: SKScene {
     private var nextEnemyFireAt: [String: TimeInterval] = [:]
     private var nodesByID: [String: SKNode] = [:]
     private let overlayNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
-    private let hudNode = SKNode()
-    private let hudBackground = SKShapeNode()
-    private let hudLines = (0..<5).map { _ in SKLabelNode(fontNamed: "AvenirNext-Medium") }
     private let backdropNode = SKNode()
+    private let statsPanel = BattleStatsPanel()
+    private let statsStore = GameStatsStore()
+    private var stats = GameStats()
 
     init(size: CGSize, scanner: DesktopScanning = DesktopScanner()) {
         self.scanner = scanner
@@ -50,7 +50,9 @@ final class GameScene: SKScene {
         view.window?.makeFirstResponder(view)
         setupBackdrop()
         setupOverlay()
-        setupHUD()
+        stats = statsStore.load()
+        addChild(statsPanel)
+        updateStatsPanel()
         reloadDesktopMap()
         resetBattle()
         watcher = DesktopWatcher { [weak self] in
@@ -62,7 +64,7 @@ final class GameScene: SKScene {
     func start() {
         phase = phase == .ready ? .running : phase
         overlayNode.isHidden = phase == .running
-        updateHUD()
+        updateStatsPanel()
     }
 
     func pauseGame() {
@@ -176,6 +178,8 @@ final class GameScene: SKScene {
         bullets = []
         nextEnemyTurnAt = [:]
         nextEnemyFireAt = [:]
+        stats = stats.resettingCurrentRun()
+        statsStore.save(stats)
         phase = .running
         overlayNode.isHidden = true
         render()
@@ -268,6 +272,7 @@ final class GameScene: SKScene {
             if bullet.ownerID == player.id,
                let enemyIndex = remainingEnemies.firstIndex(where: { $0.frame.intersects(bullet.frame) }) {
                 remainingEnemies.remove(at: enemyIndex)
+                recordKill()
                 continue
             }
 
@@ -284,6 +289,9 @@ final class GameScene: SKScene {
 
         if enemies.isEmpty, nextPhase == .running {
             nextPhase = .won
+        }
+        if phase == .running, nextPhase != .running {
+            recordRoundOutcome(nextPhase)
         }
         phase = nextPhase
 
@@ -321,7 +329,7 @@ final class GameScene: SKScene {
         case .paused, .ready:
             phase = .running
             overlayNode.isHidden = true
-            updateHUD()
+            updateStatsPanel()
         case .won, .lost:
             resetBattle()
         }
@@ -365,7 +373,7 @@ final class GameScene: SKScene {
         overlayNode.text = text
         overlayNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
         overlayNode.isHidden = false
-        updateHUD()
+        updateStatsPanel()
     }
 
     private func render() {
@@ -374,7 +382,7 @@ final class GameScene: SKScene {
         renderTank(player, palette: .player)
         enemies.forEach { renderTank($0, palette: .enemy) }
         renderBullets()
-        updateHUD()
+        updateStatsPanel()
         removeStaleNodes()
     }
 
@@ -660,59 +668,32 @@ final class GameScene: SKScene {
         return 40
     }
 
-    private func setupHUD() {
-        hudNode.zPosition = 900
-        addChild(hudNode)
-
-        hudBackground.fillColor = NSColor.black.withAlphaComponent(0.62)
-        hudBackground.strokeColor = NSColor.white.withAlphaComponent(0.28)
-        hudBackground.lineWidth = 1
-        hudNode.addChild(hudBackground)
-
-        hudLines.enumerated().forEach { index, line in
-            line.horizontalAlignmentMode = .left
-            line.verticalAlignmentMode = .center
-            line.fontSize = index == 0 ? 13 : 11
-            line.fontColor = index == 0 ? .white : NSColor.white.withAlphaComponent(0.88)
-            hudNode.addChild(line)
-        }
-
-        updateHUD()
+    private func updateStatsPanel() {
+        statsPanel.update(
+            phase: phase,
+            enemiesRemaining: enemies.count,
+            fortressHealth: fortress.health,
+            stats: stats,
+            sceneSize: size
+        )
     }
 
-    private func updateHUD() {
-        let panelWidth: CGFloat = 340
-        let panelHeight: CGFloat = 112
-        let margin: CGFloat = 18
-        hudNode.position = CGPoint(x: margin, y: size.height - panelHeight - margin)
-        hudBackground.path = CGPath(
-            roundedRect: CGRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
-            cornerWidth: 8,
-            cornerHeight: 8,
-            transform: nil
-        )
+    private func recordKill() {
+        stats = stats.recordingKill()
+        statsStore.save(stats)
+    }
 
-        let phaseText = switch phase {
-        case .ready: "Ready"
-        case .running: "Running"
-        case .paused: "Paused"
-        case .won: "Victory"
-        case .lost: "Defeat"
+    private func recordRoundOutcome(_ nextPhase: GamePhase) {
+        switch nextPhase {
+        case .won:
+            stats = stats.recordingWin()
+        case .lost:
+            stats = stats.recordingFailure()
+        case .ready, .running, .paused:
+            return
         }
 
-        let texts = [
-            "DeskTank  |  \(phaseText)  |  Enemies \(enemies.count)  |  Base HP \(fortress.health)",
-            "Blue tank = You     Red tanks = Enemies     Yellow = Base",
-            "WASD Move     J Fire     Space Pause/Resume",
-            "R Restart     Esc/Q Quit     Cmd+Opt+T Hide/Show",
-            "Desktop files and folders are live walls"
-        ]
-
-        zip(hudLines, texts).enumerated().forEach { index, pair in
-            let (line, text) = pair
-            line.text = text
-            line.position = CGPoint(x: 14, y: panelHeight - 18 - CGFloat(index) * 21)
-        }
+        statsStore.save(stats)
     }
 }
 

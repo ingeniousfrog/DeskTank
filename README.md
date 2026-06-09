@@ -15,7 +15,8 @@ obstacles, and updates the map while the game is running.
 
 The top-left HUD shows the current state, remaining enemies, base health, color
 legend, and controls. The player tank is blue, enemy tanks are red, and the base
-is yellow.
+is yellow. It also includes a persistent combat record with total kills, current
+run kills, wins, losses, and win rate.
 
 The app starts the overlay immediately when launched. Desktop files and folders
 are scanned as obstacles. DeskTank first tries to read real Finder desktop icon
