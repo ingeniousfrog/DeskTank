@@ -19,6 +19,9 @@ final class GameScene: SKScene {
     private var nextEnemyFireAt: [String: TimeInterval] = [:]
     private var nodesByID: [String: SKNode] = [:]
     private let overlayNode = SKLabelNode(fontNamed: "AvenirNext-Bold")
+    private let hudNode = SKNode()
+    private let hudBackground = SKShapeNode()
+    private let hudLines = (0..<5).map { _ in SKLabelNode(fontNamed: "AvenirNext-Medium") }
 
     init(size: CGSize, scanner: DesktopScanning = DesktopScanner()) {
         self.scanner = scanner
@@ -45,6 +48,7 @@ final class GameScene: SKScene {
         backgroundColor = NSColor.black.withAlphaComponent(0.16)
         view.window?.makeFirstResponder(view)
         setupOverlay()
+        setupHUD()
         reloadDesktopMap()
         resetBattle()
         watcher = DesktopWatcher { [weak self] in
@@ -56,6 +60,7 @@ final class GameScene: SKScene {
     func start() {
         phase = phase == .ready ? .running : phase
         overlayNode.isHidden = phase == .running
+        updateHUD()
     }
 
     func pauseGame() {
@@ -83,8 +88,14 @@ final class GameScene: SKScene {
             togglePause()
         case "r":
             resetBattle()
+        case "q":
+            NSApp.terminate(nil)
         default:
             break
+        }
+
+        if event.keyCode == 53 {
+            NSApp.terminate(nil)
         }
     }
 
@@ -308,6 +319,7 @@ final class GameScene: SKScene {
         case .paused, .ready:
             phase = .running
             overlayNode.isHidden = true
+            updateHUD()
         case .won, .lost:
             resetBattle()
         }
@@ -326,61 +338,188 @@ final class GameScene: SKScene {
         overlayNode.text = text
         overlayNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
         overlayNode.isHidden = false
+        updateHUD()
     }
 
     private func render() {
         renderObstacles()
         renderFortress()
-        renderTank(player, color: .systemTeal)
-        enemies.forEach { renderTank($0, color: .systemRed) }
+        renderTank(player, palette: .player)
+        enemies.forEach { renderTank($0, palette: .enemy) }
         renderBullets()
+        updateHUD()
         removeStaleNodes()
     }
 
     private func renderObstacles() {
         map.obstacles.forEach { obstacle in
-            let node = shapeNode(id: "obstacle-\(obstacle.id)", frame: obstacle.frame, color: .systemGray.withAlphaComponent(0.72))
-            node.strokeColor = .white.withAlphaComponent(0.35)
-            node.lineWidth = 1
+            renderObstacle(obstacle)
         }
     }
 
     private func renderFortress() {
-        let node = shapeNode(id: "fortress", frame: fortress.frame, color: .systemYellow.withAlphaComponent(0.9))
-        node.strokeColor = .black
-        node.lineWidth = 2
+        let node = containerNode(id: "fortress", center: fortress.frame.center.cgPoint)
+        node.removeAllChildren()
+        node.zPosition = 20
+        node.zRotation = 0
+
+        let width = fortress.frame.size.width
+        let height = fortress.frame.size.height
+        let base = SKShapeNode(rectOf: CGSize(width: width, height: height), cornerRadius: 6)
+        base.fillColor = .systemYellow
+        base.strokeColor = .black
+        base.lineWidth = 2
+        node.addChild(base)
+
+        let roofPath = CGMutablePath()
+        roofPath.move(to: CGPoint(x: -width * 0.38, y: height * 0.05))
+        roofPath.addLine(to: CGPoint(x: 0, y: height * 0.42))
+        roofPath.addLine(to: CGPoint(x: width * 0.38, y: height * 0.05))
+        roofPath.closeSubpath()
+
+        let roof = SKShapeNode(path: roofPath)
+        roof.fillColor = .systemOrange
+        roof.strokeColor = .black
+        roof.lineWidth = 1.5
+        node.addChild(roof)
+
+        let health = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        health.text = "BASE \(fortress.health)"
+        health.fontSize = 10
+        health.fontColor = .black
+        health.verticalAlignmentMode = .center
+        health.position = CGPoint(x: 0, y: -height * 0.22)
+        node.addChild(health)
     }
 
-    private func renderTank(_ tank: Tank, color: NSColor) {
-        let node = shapeNode(id: tank.id, frame: tank.frame, color: color)
+    private func renderTank(_ tank: Tank, palette: TankPalette) {
+        let node = containerNode(id: tank.id, center: tank.frame.center.cgPoint)
+        node.removeAllChildren()
+        node.zPosition = 30
         node.zRotation = switch tank.direction {
         case .up: 0
         case .left: .pi / 2
         case .down: .pi
         case .right: -.pi / 2
         }
+
+        let width = tank.frame.size.width
+        let height = tank.frame.size.height
+        let treadSize = CGSize(width: width * 0.22, height: height * 0.88)
+        let bodySize = CGSize(width: width * 0.68, height: height * 0.78)
+
+        [-width * 0.31, width * 0.31].forEach { x in
+            let tread = SKShapeNode(rectOf: treadSize, cornerRadius: 4)
+            tread.fillColor = palette.tread
+            tread.strokeColor = .black
+            tread.lineWidth = 1
+            tread.position = CGPoint(x: x, y: 0)
+            node.addChild(tread)
+        }
+
+        let body = SKShapeNode(rectOf: bodySize, cornerRadius: 6)
+        body.fillColor = palette.body
+        body.strokeColor = .white
+        body.lineWidth = tank.isPlayer ? 2.5 : 1.5
+        node.addChild(body)
+
+        let turret = SKShapeNode(circleOfRadius: width * 0.19)
+        turret.fillColor = palette.turret
+        turret.strokeColor = .black
+        turret.lineWidth = 1.2
+        node.addChild(turret)
+
+        let barrel = SKShapeNode(rectOf: CGSize(width: width * 0.15, height: height * 0.56), cornerRadius: 3)
+        barrel.fillColor = palette.barrel
+        barrel.strokeColor = .black
+        barrel.lineWidth = 1
+        barrel.position = CGPoint(x: 0, y: height * 0.38)
+        node.addChild(barrel)
+
+        let marker = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        marker.text = tank.isPlayer ? "YOU" : "ENEMY"
+        marker.fontSize = tank.isPlayer ? 11 : 8
+        marker.fontColor = .white
+        marker.verticalAlignmentMode = .center
+        marker.position = CGPoint(x: 0, y: -height * 0.02)
+        marker.zRotation = -node.zRotation
+        node.addChild(marker)
     }
 
     private func renderBullets() {
         bullets.forEach { bullet in
-            _ = shapeNode(id: bullet.id, frame: bullet.frame, color: .white)
+            let node = containerNode(id: bullet.id, center: bullet.frame.center.cgPoint)
+            node.removeAllChildren()
+            node.zPosition = 40
+            node.zRotation = 0
+
+            let bulletShape = SKShapeNode(circleOfRadius: max(4, bullet.frame.size.width / 2))
+            bulletShape.fillColor = bullet.ownerID == player.id ? .systemBlue : .systemRed
+            bulletShape.strokeColor = .white
+            bulletShape.lineWidth = 1
+            node.addChild(bulletShape)
         }
     }
 
-    private func shapeNode(id: String, frame: Rect, color: NSColor) -> SKShapeNode {
-        let node: SKShapeNode
-        if let existing = nodesByID[id] as? SKShapeNode {
-            node = existing
-            node.path = CGPath(rect: frame.toCGRect, transform: nil)
+    private func renderObstacle(_ obstacle: Obstacle) {
+        let node = containerNode(id: "obstacle-\(obstacle.id)", center: obstacle.frame.center.cgPoint)
+        node.removeAllChildren()
+        node.zPosition = 10
+        node.zRotation = 0
+
+        let width = obstacle.frame.size.width
+        let height = obstacle.frame.size.height
+        let bodySize = CGSize(width: max(44, width * 0.82), height: max(46, height * 0.72))
+        let body = SKShapeNode(rectOf: bodySize, cornerRadius: 7)
+        body.fillColor = obstacle.isDirectory
+            ? NSColor.systemBrown.withAlphaComponent(0.86)
+            : NSColor.windowBackgroundColor.withAlphaComponent(0.88)
+        body.strokeColor = obstacle.isDirectory ? .systemYellow : .systemGray
+        body.lineWidth = 2
+        body.position = CGPoint(x: 0, y: -height * 0.04)
+        node.addChild(body)
+
+        if obstacle.isDirectory {
+            let tab = SKShapeNode(rectOf: CGSize(width: bodySize.width * 0.42, height: 12), cornerRadius: 4)
+            tab.fillColor = NSColor.systemYellow.withAlphaComponent(0.92)
+            tab.strokeColor = .systemBrown
+            tab.lineWidth = 1
+            tab.position = CGPoint(x: -bodySize.width * 0.2, y: bodySize.height * 0.34)
+            node.addChild(tab)
         } else {
-            node = SKShapeNode(rect: frame.toCGRect)
+            let foldPath = CGMutablePath()
+            foldPath.move(to: CGPoint(x: bodySize.width * 0.18, y: bodySize.height * 0.36))
+            foldPath.addLine(to: CGPoint(x: bodySize.width * 0.34, y: bodySize.height * 0.2))
+            foldPath.addLine(to: CGPoint(x: bodySize.width * 0.34, y: bodySize.height * 0.36))
+            foldPath.closeSubpath()
+
+            let fold = SKShapeNode(path: foldPath)
+            fold.fillColor = .systemGray
+            fold.strokeColor = .systemGray
+            node.addChild(fold)
+        }
+
+        let label = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
+        label.text = obstacle.label.shortened(maxLength: 10)
+        label.fontSize = 9
+        label.fontColor = obstacle.isDirectory ? .white : .black
+        label.verticalAlignmentMode = .center
+        label.position = CGPoint(x: 0, y: -bodySize.height * 0.17)
+        node.addChild(label)
+    }
+
+    private func containerNode(id: String, center: CGPoint) -> SKNode {
+        let node: SKNode
+        if let existing = nodesByID[id] {
+            node = existing
+        } else {
+            node = SKNode()
             node.name = id
             addChild(node)
             nodesByID[id] = node
         }
 
-        node.fillColor = color
-        node.zPosition = zPosition(for: id)
+        node.position = center
         return node
     }
 
@@ -412,10 +551,102 @@ final class GameScene: SKScene {
         }
         return 40
     }
+
+    private func setupHUD() {
+        hudNode.zPosition = 900
+        addChild(hudNode)
+
+        hudBackground.fillColor = NSColor.black.withAlphaComponent(0.62)
+        hudBackground.strokeColor = NSColor.white.withAlphaComponent(0.28)
+        hudBackground.lineWidth = 1
+        hudNode.addChild(hudBackground)
+
+        hudLines.enumerated().forEach { index, line in
+            line.horizontalAlignmentMode = .left
+            line.verticalAlignmentMode = .center
+            line.fontSize = index == 0 ? 13 : 11
+            line.fontColor = index == 0 ? .white : NSColor.white.withAlphaComponent(0.88)
+            hudNode.addChild(line)
+        }
+
+        updateHUD()
+    }
+
+    private func updateHUD() {
+        let panelWidth: CGFloat = 340
+        let panelHeight: CGFloat = 112
+        let margin: CGFloat = 18
+        hudNode.position = CGPoint(x: margin, y: size.height - panelHeight - margin)
+        hudBackground.path = CGPath(
+            roundedRect: CGRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
+            cornerWidth: 8,
+            cornerHeight: 8,
+            transform: nil
+        )
+
+        let phaseText = switch phase {
+        case .ready: "Ready"
+        case .running: "Running"
+        case .paused: "Paused"
+        case .won: "Victory"
+        case .lost: "Defeat"
+        }
+
+        let texts = [
+            "DeskTank  |  \(phaseText)  |  Enemies \(enemies.count)  |  Base HP \(fortress.health)",
+            "Blue tank = You     Red tanks = Enemies     Yellow = Base",
+            "WASD Move     J Fire     Space Pause/Resume",
+            "R Restart     Esc/Q Quit     Cmd+Opt+T Hide/Show",
+            "Desktop files and folders are live walls"
+        ]
+
+        zip(hudLines, texts).enumerated().forEach { index, pair in
+            let (line, text) = pair
+            line.text = text
+            line.position = CGPoint(x: 14, y: panelHeight - 18 - CGFloat(index) * 21)
+        }
+    }
 }
 
 private extension Rect {
     var toCGRect: CGRect {
         CGRect(x: origin.x, y: origin.y, width: size.width, height: size.height)
     }
+}
+
+private extension Point {
+    var cgPoint: CGPoint {
+        CGPoint(x: x, y: y)
+    }
+}
+
+private extension String {
+    func shortened(maxLength: Int) -> String {
+        guard count > maxLength else {
+            return self
+        }
+
+        return String(prefix(maxLength - 1)) + "..."
+    }
+}
+
+private struct TankPalette {
+    let body: NSColor
+    let turret: NSColor
+    let barrel: NSColor
+    let tread: NSColor
+
+    static let player = TankPalette(
+        body: .systemBlue,
+        turret: .controlAccentColor,
+        barrel: .systemBlue,
+        tread: NSColor(calibratedWhite: 0.08, alpha: 1)
+    )
+
+    static let enemy = TankPalette(
+        body: .systemRed,
+        turret: .systemPink,
+        barrel: .systemRed,
+        tread: NSColor(calibratedWhite: 0.08, alpha: 1)
+    )
 }

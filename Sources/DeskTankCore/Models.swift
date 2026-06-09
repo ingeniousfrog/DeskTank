@@ -42,11 +42,13 @@ public struct Obstacle: Equatable, Sendable {
     public let id: String
     public let frame: Rect
     public let label: String
+    public let isDirectory: Bool
 
-    public init(id: String, frame: Rect, label: String) {
+    public init(id: String, frame: Rect, label: String, isDirectory: Bool = false) {
         self.id = id
         self.frame = frame
         self.label = label
+        self.isDirectory = isDirectory
     }
 }
 

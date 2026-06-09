@@ -11,7 +11,7 @@ public struct MapModel: Equatable, Sendable {
 
     public func replacingDesktopItems(_ items: [DesktopItem]) -> MapModel {
         let nextObstacles = items
-            .map { Obstacle(id: $0.id, frame: $0.frame, label: $0.name) }
+            .map { Obstacle(id: $0.id, frame: $0.frame, label: $0.name, isDirectory: $0.isDirectory) }
             .filter { bounds.intersects($0.frame) }
         return MapModel(bounds: bounds, obstacles: nextObstacles)
     }

@@ -24,7 +24,8 @@ import Testing
         Obstacle(
             id: "a",
             frame: Rect(origin: Point(x: 20, y: 30), size: Size(width: 70, height: 80)),
-            label: "Notes"
+            label: "Notes",
+            isDirectory: false
         )
     ])
 }

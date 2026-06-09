@@ -10,7 +10,12 @@ obstacles, and updates the map while the game is running.
 - `J`: fire
 - `Space`: pause or resume
 - `R`: restart after victory or defeat
+- `Esc` or `Q`: quit
 - `Command` + `Option` + `T`: show or hide the game overlay
+
+The top-left HUD shows the current state, remaining enemies, base health, color
+legend, and controls. The player tank is blue, enemy tanks are red, and the base
+is yellow.
 
 The app starts the overlay immediately when launched. Desktop files and folders
 are scanned as obstacles. DeskTank first tries to read real Finder desktop icon
