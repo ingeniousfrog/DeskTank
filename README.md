@@ -59,6 +59,10 @@ signed `.app` bundle and distribute that app inside a `.dmg` installer image.
 The `.app` is the actual application; the `.dmg` is the convenient delivery
 container.
 
+```bash
+scripts/package_app.sh 0.1.0
+```
+
 ## Project Layout
 
 - `Sources/DeskTankCore`: testable game rules, map geometry, collision, movement

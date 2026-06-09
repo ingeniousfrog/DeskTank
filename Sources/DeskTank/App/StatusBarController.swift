@@ -39,7 +39,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     }
 
     private func setupStatusItem() {
-        statusItem.button?.title = "DT"
+        statusItem.button?.title = ""
+        statusItem.button?.image = AppIconFactory.menuBarIcon()
+        statusItem.button?.imagePosition = .imageOnly
         statusItem.button?.toolTip = "DeskTank"
     }
 
