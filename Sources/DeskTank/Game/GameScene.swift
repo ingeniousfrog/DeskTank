@@ -22,6 +22,7 @@ final class GameScene: SKScene {
     private let hudNode = SKNode()
     private let hudBackground = SKShapeNode()
     private let hudLines = (0..<5).map { _ in SKLabelNode(fontNamed: "AvenirNext-Medium") }
+    private let backdropNode = SKNode()
 
     init(size: CGSize, scanner: DesktopScanning = DesktopScanner()) {
         self.scanner = scanner
@@ -47,6 +48,7 @@ final class GameScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = NSColor.black.withAlphaComponent(0.16)
         view.window?.makeFirstResponder(view)
+        setupBackdrop()
         setupOverlay()
         setupHUD()
         reloadDesktopMap()
@@ -334,6 +336,31 @@ final class GameScene: SKScene {
         addChild(overlayNode)
     }
 
+    private func setupBackdrop() {
+        backdropNode.zPosition = -100
+        addChild(backdropNode)
+
+        let wash = SKShapeNode(rect: CGRect(origin: .zero, size: size))
+        wash.fillColor = NSColor(calibratedRed: 0.04, green: 0.08, blue: 0.10, alpha: 0.22)
+        wash.strokeColor = .clear
+        backdropNode.addChild(wash)
+
+        let gridPath = CGMutablePath()
+        stride(from: 0.0, through: size.width, by: 48).forEach { x in
+            gridPath.move(to: CGPoint(x: x, y: 0))
+            gridPath.addLine(to: CGPoint(x: x, y: size.height))
+        }
+        stride(from: 0.0, through: size.height, by: 48).forEach { y in
+            gridPath.move(to: CGPoint(x: 0, y: y))
+            gridPath.addLine(to: CGPoint(x: size.width, y: y))
+        }
+
+        let grid = SKShapeNode(path: gridPath)
+        grid.strokeColor = NSColor.white.withAlphaComponent(0.045)
+        grid.lineWidth = 1
+        backdropNode.addChild(grid)
+    }
+
     private func updateOverlay(_ text: String) {
         overlayNode.text = text
         overlayNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -365,30 +392,50 @@ final class GameScene: SKScene {
 
         let width = fortress.frame.size.width
         let height = fortress.frame.size.height
-        let base = SKShapeNode(rectOf: CGSize(width: width, height: height), cornerRadius: 6)
-        base.fillColor = .systemYellow
-        base.strokeColor = .black
-        base.lineWidth = 2
+        let shadow = SKShapeNode(rectOf: CGSize(width: width * 1.08, height: height * 0.92), cornerRadius: 10)
+        shadow.fillColor = NSColor.black.withAlphaComponent(0.34)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 3, y: -4)
+        node.addChild(shadow)
+
+        let outerWall = SKShapeNode(rectOf: CGSize(width: width * 1.05, height: height * 0.95), cornerRadius: 8)
+        outerWall.fillColor = NSColor(calibratedRed: 0.17, green: 0.18, blue: 0.19, alpha: 0.96)
+        outerWall.strokeColor = NSColor(calibratedRed: 1.0, green: 0.82, blue: 0.20, alpha: 1)
+        outerWall.lineWidth = 3
+        node.addChild(outerWall)
+
+        let base = SKShapeNode(rectOf: CGSize(width: width * 0.76, height: height * 0.58), cornerRadius: 6)
+        base.fillColor = NSColor(calibratedRed: 0.98, green: 0.70, blue: 0.16, alpha: 1)
+        base.strokeColor = NSColor(calibratedRed: 0.15, green: 0.09, blue: 0.02, alpha: 1)
+        base.lineWidth = 1.6
+        base.position = CGPoint(x: 0, y: -height * 0.06)
         node.addChild(base)
 
         let roofPath = CGMutablePath()
-        roofPath.move(to: CGPoint(x: -width * 0.38, y: height * 0.05))
-        roofPath.addLine(to: CGPoint(x: 0, y: height * 0.42))
-        roofPath.addLine(to: CGPoint(x: width * 0.38, y: height * 0.05))
+        roofPath.move(to: CGPoint(x: -width * 0.42, y: height * 0.06))
+        roofPath.addLine(to: CGPoint(x: 0, y: height * 0.40))
+        roofPath.addLine(to: CGPoint(x: width * 0.42, y: height * 0.06))
         roofPath.closeSubpath()
 
         let roof = SKShapeNode(path: roofPath)
-        roof.fillColor = .systemOrange
-        roof.strokeColor = .black
+        roof.fillColor = NSColor(calibratedRed: 0.86, green: 0.16, blue: 0.10, alpha: 1)
+        roof.strokeColor = NSColor(calibratedRed: 0.17, green: 0.04, blue: 0.02, alpha: 1)
         roof.lineWidth = 1.5
         node.addChild(roof)
 
+        let core = SKShapeNode(rectOf: CGSize(width: width * 0.25, height: height * 0.28), cornerRadius: 3)
+        core.fillColor = NSColor(calibratedRed: 1.0, green: 0.93, blue: 0.48, alpha: 1)
+        core.strokeColor = NSColor.black.withAlphaComponent(0.65)
+        core.lineWidth = 1
+        core.position = CGPoint(x: 0, y: -height * 0.11)
+        node.addChild(core)
+
         let health = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        health.text = "BASE \(fortress.health)"
-        health.fontSize = 10
-        health.fontColor = .black
+        health.text = "HP \(fortress.health)"
+        health.fontSize = 9
+        health.fontColor = .white
         health.verticalAlignmentMode = .center
-        health.position = CGPoint(x: 0, y: -height * 0.22)
+        health.position = CGPoint(x: 0, y: -height * 0.41)
         node.addChild(health)
     }
 
@@ -405,43 +452,80 @@ final class GameScene: SKScene {
 
         let width = tank.frame.size.width
         let height = tank.frame.size.height
-        let treadSize = CGSize(width: width * 0.22, height: height * 0.88)
-        let bodySize = CGSize(width: width * 0.68, height: height * 0.78)
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: width * 1.18, height: height * 0.44))
+        shadow.fillColor = NSColor.black.withAlphaComponent(0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 3, y: -height * 0.38)
+        node.addChild(shadow)
+
+        let treadSize = CGSize(width: width * 0.24, height: height * 0.92)
+        let bodySize = CGSize(width: width * 0.66, height: height * 0.78)
 
         [-width * 0.31, width * 0.31].forEach { x in
             let tread = SKShapeNode(rectOf: treadSize, cornerRadius: 4)
             tread.fillColor = palette.tread
-            tread.strokeColor = .black
+            tread.strokeColor = palette.darkStroke
             tread.lineWidth = 1
             tread.position = CGPoint(x: x, y: 0)
             node.addChild(tread)
+
+            stride(from: -height * 0.31, through: height * 0.31, by: height * 0.19).forEach { y in
+                let plate = SKShapeNode(rectOf: CGSize(width: treadSize.width * 0.72, height: 2), cornerRadius: 1)
+                plate.fillColor = NSColor.white.withAlphaComponent(0.18)
+                plate.strokeColor = .clear
+                plate.position = CGPoint(x: x, y: y)
+                node.addChild(plate)
+            }
         }
+
+        let hullBack = SKShapeNode(rectOf: CGSize(width: width * 0.76, height: height * 0.70), cornerRadius: 7)
+        hullBack.fillColor = palette.darkStroke
+        hullBack.strokeColor = .clear
+        hullBack.position = CGPoint(x: 0, y: -height * 0.02)
+        node.addChild(hullBack)
 
         let body = SKShapeNode(rectOf: bodySize, cornerRadius: 6)
         body.fillColor = palette.body
-        body.strokeColor = .white
-        body.lineWidth = tank.isPlayer ? 2.5 : 1.5
+        body.strokeColor = palette.trim
+        body.lineWidth = tank.isPlayer ? 2.6 : 1.8
         node.addChild(body)
 
-        let turret = SKShapeNode(circleOfRadius: width * 0.19)
+        let highlight = SKShapeNode(rectOf: CGSize(width: width * 0.44, height: height * 0.10), cornerRadius: 3)
+        highlight.fillColor = NSColor.white.withAlphaComponent(0.24)
+        highlight.strokeColor = .clear
+        highlight.position = CGPoint(x: -width * 0.03, y: height * 0.18)
+        node.addChild(highlight)
+
+        let turretBase = SKShapeNode(circleOfRadius: width * 0.23)
+        turretBase.fillColor = palette.darkStroke
+        turretBase.strokeColor = .clear
+        node.addChild(turretBase)
+
+        let turret = SKShapeNode(circleOfRadius: width * 0.18)
         turret.fillColor = palette.turret
-        turret.strokeColor = .black
+        turret.strokeColor = palette.trim
         turret.lineWidth = 1.2
         node.addChild(turret)
 
-        let barrel = SKShapeNode(rectOf: CGSize(width: width * 0.15, height: height * 0.56), cornerRadius: 3)
+        let barrel = SKShapeNode(rectOf: CGSize(width: width * 0.14, height: height * 0.62), cornerRadius: 3)
         barrel.fillColor = palette.barrel
-        barrel.strokeColor = .black
+        barrel.strokeColor = palette.darkStroke
         barrel.lineWidth = 1
-        barrel.position = CGPoint(x: 0, y: height * 0.38)
+        barrel.position = CGPoint(x: 0, y: height * 0.42)
         node.addChild(barrel)
 
+        let muzzle = SKShapeNode(rectOf: CGSize(width: width * 0.22, height: height * 0.10), cornerRadius: 3)
+        muzzle.fillColor = palette.darkStroke
+        muzzle.strokeColor = .clear
+        muzzle.position = CGPoint(x: 0, y: height * 0.75)
+        node.addChild(muzzle)
+
         let marker = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        marker.text = tank.isPlayer ? "YOU" : "ENEMY"
-        marker.fontSize = tank.isPlayer ? 11 : 8
+        marker.text = tank.isPlayer ? "P1" : "CPU"
+        marker.fontSize = tank.isPlayer ? 10 : 8
         marker.fontColor = .white
         marker.verticalAlignmentMode = .center
-        marker.position = CGPoint(x: 0, y: -height * 0.02)
+        marker.position = CGPoint(x: 0, y: -height * 0.08)
         marker.zRotation = -node.zRotation
         node.addChild(marker)
     }
@@ -469,42 +553,66 @@ final class GameScene: SKScene {
 
         let width = obstacle.frame.size.width
         let height = obstacle.frame.size.height
-        let bodySize = CGSize(width: max(44, width * 0.82), height: max(46, height * 0.72))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: max(50, width * 0.86), height: 14))
+        shadow.fillColor = NSColor.black.withAlphaComponent(0.26)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 3, y: -height * 0.43)
+        node.addChild(shadow)
+
+        let bodySize = CGSize(width: max(48, width * 0.80), height: max(48, height * 0.74))
         let body = SKShapeNode(rectOf: bodySize, cornerRadius: 7)
         body.fillColor = obstacle.isDirectory
-            ? NSColor.systemBrown.withAlphaComponent(0.86)
-            : NSColor.windowBackgroundColor.withAlphaComponent(0.88)
-        body.strokeColor = obstacle.isDirectory ? .systemYellow : .systemGray
+            ? NSColor(calibratedRed: 0.91, green: 0.64, blue: 0.20, alpha: 0.95)
+            : NSColor(calibratedRed: 0.90, green: 0.94, blue: 1.0, alpha: 0.95)
+        body.strokeColor = obstacle.isDirectory
+            ? NSColor(calibratedRed: 0.45, green: 0.25, blue: 0.06, alpha: 1)
+            : NSColor(calibratedRed: 0.28, green: 0.38, blue: 0.52, alpha: 1)
         body.lineWidth = 2
         body.position = CGPoint(x: 0, y: -height * 0.04)
         node.addChild(body)
 
         if obstacle.isDirectory {
-            let tab = SKShapeNode(rectOf: CGSize(width: bodySize.width * 0.42, height: 12), cornerRadius: 4)
-            tab.fillColor = NSColor.systemYellow.withAlphaComponent(0.92)
-            tab.strokeColor = .systemBrown
+            let tab = SKShapeNode(rectOf: CGSize(width: bodySize.width * 0.44, height: 14), cornerRadius: 4)
+            tab.fillColor = NSColor(calibratedRed: 1.0, green: 0.80, blue: 0.30, alpha: 1)
+            tab.strokeColor = NSColor(calibratedRed: 0.45, green: 0.25, blue: 0.06, alpha: 1)
             tab.lineWidth = 1
             tab.position = CGPoint(x: -bodySize.width * 0.2, y: bodySize.height * 0.34)
             node.addChild(tab)
+
+            let shine = SKShapeNode(rectOf: CGSize(width: bodySize.width * 0.58, height: 4), cornerRadius: 2)
+            shine.fillColor = NSColor.white.withAlphaComponent(0.25)
+            shine.strokeColor = .clear
+            shine.position = CGPoint(x: -bodySize.width * 0.04, y: bodySize.height * 0.16)
+            node.addChild(shine)
         } else {
             let foldPath = CGMutablePath()
-            foldPath.move(to: CGPoint(x: bodySize.width * 0.18, y: bodySize.height * 0.36))
-            foldPath.addLine(to: CGPoint(x: bodySize.width * 0.34, y: bodySize.height * 0.2))
-            foldPath.addLine(to: CGPoint(x: bodySize.width * 0.34, y: bodySize.height * 0.36))
+            foldPath.move(to: CGPoint(x: bodySize.width * 0.17, y: bodySize.height * 0.37))
+            foldPath.addLine(to: CGPoint(x: bodySize.width * 0.34, y: bodySize.height * 0.20))
+            foldPath.addLine(to: CGPoint(x: bodySize.width * 0.34, y: bodySize.height * 0.37))
             foldPath.closeSubpath()
 
             let fold = SKShapeNode(path: foldPath)
-            fold.fillColor = .systemGray
-            fold.strokeColor = .systemGray
+            fold.fillColor = NSColor(calibratedRed: 0.68, green: 0.78, blue: 0.92, alpha: 1)
+            fold.strokeColor = NSColor(calibratedRed: 0.28, green: 0.38, blue: 0.52, alpha: 1)
             node.addChild(fold)
+
+            stride(from: -bodySize.height * 0.12, through: bodySize.height * 0.16, by: 8).forEach { y in
+                let line = SKShapeNode(rectOf: CGSize(width: bodySize.width * 0.48, height: 1.5), cornerRadius: 1)
+                line.fillColor = NSColor(calibratedRed: 0.42, green: 0.54, blue: 0.70, alpha: 0.70)
+                line.strokeColor = .clear
+                line.position = CGPoint(x: -bodySize.width * 0.04, y: y)
+                node.addChild(line)
+            }
         }
 
         let label = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
         label.text = obstacle.label.shortened(maxLength: 10)
         label.fontSize = 9
-        label.fontColor = obstacle.isDirectory ? .white : .black
+        label.fontColor = obstacle.isDirectory
+            ? NSColor(calibratedRed: 0.16, green: 0.09, blue: 0.02, alpha: 1)
+            : NSColor(calibratedRed: 0.15, green: 0.20, blue: 0.28, alpha: 1)
         label.verticalAlignmentMode = .center
-        label.position = CGPoint(x: 0, y: -bodySize.height * 0.17)
+        label.position = CGPoint(x: 0, y: -bodySize.height * 0.24)
         node.addChild(label)
     }
 
@@ -635,18 +743,24 @@ private struct TankPalette {
     let turret: NSColor
     let barrel: NSColor
     let tread: NSColor
+    let trim: NSColor
+    let darkStroke: NSColor
 
     static let player = TankPalette(
-        body: .systemBlue,
-        turret: .controlAccentColor,
-        barrel: .systemBlue,
-        tread: NSColor(calibratedWhite: 0.08, alpha: 1)
+        body: NSColor(calibratedRed: 0.08, green: 0.39, blue: 0.92, alpha: 1),
+        turret: NSColor(calibratedRed: 0.14, green: 0.62, blue: 1.0, alpha: 1),
+        barrel: NSColor(calibratedRed: 0.06, green: 0.26, blue: 0.68, alpha: 1),
+        tread: NSColor(calibratedRed: 0.03, green: 0.06, blue: 0.11, alpha: 1),
+        trim: NSColor(calibratedRed: 0.75, green: 0.90, blue: 1.0, alpha: 1),
+        darkStroke: NSColor(calibratedRed: 0.02, green: 0.08, blue: 0.20, alpha: 1)
     )
 
     static let enemy = TankPalette(
-        body: .systemRed,
-        turret: .systemPink,
-        barrel: .systemRed,
-        tread: NSColor(calibratedWhite: 0.08, alpha: 1)
+        body: NSColor(calibratedRed: 0.86, green: 0.09, blue: 0.13, alpha: 1),
+        turret: NSColor(calibratedRed: 1.0, green: 0.25, blue: 0.28, alpha: 1),
+        barrel: NSColor(calibratedRed: 0.62, green: 0.02, blue: 0.05, alpha: 1),
+        tread: NSColor(calibratedRed: 0.10, green: 0.03, blue: 0.03, alpha: 1),
+        trim: NSColor(calibratedRed: 1.0, green: 0.74, blue: 0.65, alpha: 1),
+        darkStroke: NSColor(calibratedRed: 0.24, green: 0.02, blue: 0.03, alpha: 1)
     )
 }
