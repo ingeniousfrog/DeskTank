@@ -16,12 +16,16 @@ obstacles, and updates the map while the game is running.
 The top-left HUD shows the current state, remaining enemies, base health, color
 legend, and controls. The player tank is blue, enemy tanks are red, and the base
 is yellow. It also includes a persistent combat record with total kills, current
-run kills, wins, losses, and win rate.
+run kills, wins, losses, and win rate. The HUD is part of the battlefield: tanks
+and bullets cannot pass through it.
 
 The app starts the overlay immediately when launched. Desktop files and folders
 are scanned as obstacles. DeskTank first tries to read real Finder desktop icon
 positions with AppleScript; if macOS denies automation access or Finder does not
 return positions, it falls back to a stable right-to-left grid layout.
+
+Desktop folders render as castle obstacles, while desktop files render as wall
+segments.
 
 ## Run
 

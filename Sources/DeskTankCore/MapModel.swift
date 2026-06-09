@@ -16,6 +16,11 @@ public struct MapModel: Equatable, Sendable {
         return MapModel(bounds: bounds, obstacles: nextObstacles)
     }
 
+    public func includingStaticObstacles(_ staticObstacles: [Obstacle]) -> MapModel {
+        let mergedObstacles = obstacles + staticObstacles.filter { bounds.intersects($0.frame) }
+        return MapModel(bounds: bounds, obstacles: mergedObstacles)
+    }
+
     public func isBlocked(_ frame: Rect) -> Bool {
         !bounds.contains(frame) || obstacles.contains { $0.frame.intersects(frame) }
     }

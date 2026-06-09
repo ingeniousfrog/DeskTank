@@ -10,7 +10,8 @@ final class BattleStatsPanel: SKNode {
     private let statusLine = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
     private let recordNodes = (0..<4).map { _ in StatReadoutNode() }
     private let controlLines = (0..<3).map { _ in SKLabelNode(fontNamed: "AvenirNext-Medium") }
-    private let panelSize = CGSize(width: 430, height: 188)
+    static let size = CGSize(width: 430, height: 188)
+    static let margin: CGFloat = 18
 
     override init() {
         super.init()
@@ -31,7 +32,7 @@ final class BattleStatsPanel: SKNode {
         stats: GameStats,
         sceneSize: CGSize
     ) {
-        position = CGPoint(x: 18, y: sceneSize.height - panelSize.height - 18)
+        position = Self.origin(sceneSize: sceneSize)
         background.path = panelPath
         glow.path = panelPath
 
@@ -67,11 +68,23 @@ final class BattleStatsPanel: SKNode {
 
     private var panelPath: CGPath {
         CGPath(
-            roundedRect: CGRect(origin: .zero, size: panelSize),
+            roundedRect: CGRect(origin: .zero, size: Self.size),
             cornerWidth: 12,
             cornerHeight: 12,
             transform: nil
         )
+    }
+
+    static func obstacleFrame(sceneSize: CGSize) -> Rect {
+        let origin = origin(sceneSize: sceneSize)
+        return Rect(
+            origin: Point(x: origin.x, y: origin.y),
+            size: Size(width: size.width, height: size.height)
+        )
+    }
+
+    private static func origin(sceneSize: CGSize) -> CGPoint {
+        CGPoint(x: margin, y: sceneSize.height - size.height - margin)
     }
 
     private func setupChrome() {
@@ -87,9 +100,9 @@ final class BattleStatsPanel: SKNode {
         addChild(background)
 
         let scanlinePath = CGMutablePath()
-        stride(from: 12.0, through: panelSize.height - 12, by: 9).forEach { y in
+        stride(from: 12.0, through: Self.size.height - 12, by: 9).forEach { y in
             scanlinePath.move(to: CGPoint(x: 12, y: y))
-            scanlinePath.addLine(to: CGPoint(x: panelSize.width - 12, y: y))
+            scanlinePath.addLine(to: CGPoint(x: Self.size.width - 12, y: y))
         }
         let scanlines = SKShapeNode(path: scanlinePath)
         scanlines.strokeColor = NSColor.white.withAlphaComponent(0.035)

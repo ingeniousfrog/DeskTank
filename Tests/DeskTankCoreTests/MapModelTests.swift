@@ -63,3 +63,18 @@ import Testing
 
     #expect(!map.isBlocked(resolved))
 }
+
+@Test func staticObstaclesAreIncludedInCollisionChecks() {
+    let map = MapModel(
+        bounds: Rect(origin: Point(x: 0, y: 0), size: Size(width: 600, height: 400))
+    )
+    let statsPanel = Obstacle(
+        id: "stats-panel",
+        frame: Rect(origin: Point(x: 18, y: 194), size: Size(width: 430, height: 188)),
+        label: "Stats Panel"
+    )
+
+    let updated = map.includingStaticObstacles([statsPanel])
+
+    #expect(updated.isBlocked(Rect(origin: Point(x: 40, y: 220), size: Size(width: 42, height: 42))))
+}
