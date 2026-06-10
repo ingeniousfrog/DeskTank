@@ -152,3 +152,13 @@ scripts/package_app.sh 0.1.0
 | `Tests/DeskTankCoreTests` | Unit tests for rules, map behavior, and combat stats |
 | `docs/assets` | README artwork and the app logo source used during packaging |
 | `scripts/package_app.sh` | Release build, app bundle creation, icon generation, signing, and DMG packaging |
+
+## Community
+
+Have ideas about DeskTank, desktop games, or macOS utilities? You can scan the
+WeChat Official Account QR code below, follow **观物思理**, and send a private
+message there.
+
+<p align="center">
+  <img src="docs/assets/wechat-official-account.jpg" width="200" alt="WeChat Official Account QR code for 观物思理">
+</p>

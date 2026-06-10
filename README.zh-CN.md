@@ -150,3 +150,12 @@ scripts/package_app.sh 0.1.0
 | `Tests/DeskTankCoreTests` | 游戏规则、地图行为和战绩统计的单元测试 |
 | `docs/assets` | README 素材，以及打包时使用的 app logo 源图 |
 | `scripts/package_app.sh` | Release 构建、app bundle、图标生成、签名和 DMG 打包 |
+
+## 欢迎交流
+
+如果你对 DeskTank、桌面游戏、macOS 小工具，或者这个项目后续怎么做有想法，
+欢迎扫码关注公众号 **观物思理**，关注后可以私信交流。
+
+<p align="center">
+  <img src="docs/assets/wechat-official-account.jpg" width="200" alt="观物思理微信公众号二维码">
+</p>
