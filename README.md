@@ -1,8 +1,22 @@
+<p align="center">
+  <img src="docs/assets/desktank-logo.svg" width="160" alt="DeskTank cute tank app logo">
+</p>
+
 # DeskTank
 
 DeskTank is a macOS desktop tank-battle prototype. It launches a transparent
 SpriteKit battlefield over the desktop, turns Desktop files and folders into
 obstacles, and updates the map while the game is running.
+
+<p align="center">
+  <img src="docs/assets/desktank-assets.svg" alt="DeskTank battlefield asset preview">
+</p>
+
+## Install
+
+Download the latest `.dmg` installer from
+[GitHub Releases](https://github.com/ingeniousfrog/DeskTank/releases). Drag
+`DeskTank.app` into Applications, then launch it from the macOS menu bar.
 
 ## Current Gameplay
 
@@ -30,6 +44,45 @@ return positions, it falls back to a stable right-to-left grid layout.
 
 Desktop folders render as castle obstacles, while desktop files render as wall
 segments.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    User["Player"] --> StatusItem["macOS Menu Bar Item"]
+    StatusItem --> StatusBarController["StatusBarController"]
+    StatusBarController --> StatsMenu["Combat Record Menu"]
+    StatusBarController --> GameWindowController["GameWindowController"]
+    GameWindowController --> OverlayWindow["Transparent AppKit Overlay Window"]
+    OverlayWindow --> GameScene["SpriteKit GameScene"]
+
+    GameScene --> Controls["Keyboard Controls: WASD, J, Space, Esc"]
+    GameScene --> BattlePanel["BattleStatsPanel"]
+    GameScene --> Entities["Player Tank, Enemy Tanks, Bullets, Base"]
+    GameScene --> DesktopLayer["Desktop Obstacles"]
+
+    DesktopWatcher["DesktopWatcher"] --> DesktopLayer
+    DesktopScanner["DesktopScanner"] --> DesktopLayer
+    DesktopScanner --> Finder["Finder AppleScript Positions"]
+    DesktopScanner --> FallbackGrid["Fallback Grid Layout"]
+
+    DesktopLayer --> MapModel["DeskTankCore MapModel"]
+    BattlePanel --> MapModel
+    Entities --> GameRules["DeskTankCore GameRules"]
+    GameRules --> MapModel
+
+    GameScene --> GameStatsStore["GameStatsStore"]
+    GameStatsStore --> UserDefaults["UserDefaults"]
+    GameStatsStore --> GameStats["DeskTankCore GameStats"]
+    GameStats --> StatsMenu
+    GameStats --> BattlePanel
+
+    Packaging["scripts/package_app.sh"] --> ReleaseBuild["swift build -c release"]
+    ReleaseBuild --> AppBundle["DeskTank.app"]
+    AppIcon["Cute Tank App Icon"] --> AppBundle
+    AppBundle --> DMG["DeskTank DMG Installer"]
+    DMG --> Releases["GitHub Releases"]
+```
 
 ## Run
 
