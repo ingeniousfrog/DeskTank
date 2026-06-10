@@ -10,6 +10,7 @@ CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 ICONSET_DIR="$DIST_DIR/AppIcon.iconset"
+LOGO_SOURCE="$ROOT_DIR/docs/assets/desktank-logo.png"
 DMG_ROOT="$DIST_DIR/dmg-root"
 DMG_PATH="$DIST_DIR/$APP_NAME-$VERSION.dmg"
 
@@ -23,7 +24,7 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$ICONSET_DIR" "$DMG_ROOT"
 cp ".build/release/$APP_NAME" "$MACOS_DIR/$APP_NAME"
 chmod +x "$MACOS_DIR/$APP_NAME"
 
-swift scripts/generate_app_icon.swift "$ICONSET_DIR"
+swift scripts/generate_app_icon.swift "$LOGO_SOURCE" "$ICONSET_DIR"
 iconutil -c icns "$ICONSET_DIR" -o "$RESOURCES_DIR/AppIcon.icns"
 
 cat > "$CONTENTS_DIR/Info.plist" <<PLIST

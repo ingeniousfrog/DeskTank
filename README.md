@@ -1,16 +1,56 @@
 <p align="center">
-  <img src="docs/assets/desktank-logo.svg" width="160" alt="DeskTank cute tank app logo">
+  <img src="docs/assets/desktank-logo.png" width="180" alt="DeskTank cute tank app logo">
 </p>
 
-# DeskTank
+<h1 align="center">DeskTank</h1>
 
-DeskTank is a macOS desktop tank-battle prototype. It launches a transparent
-SpriteKit battlefield over the desktop, turns Desktop files and folders into
-obstacles, and updates the map while the game is running.
+<p align="center">
+  A macOS menu bar tank game that turns your Desktop files and folders into the battlefield.
+</p>
+
+<p align="center">
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="https://github.com/ingeniousfrog/DeskTank/releases">Download DMG</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/ingeniousfrog/DeskTank/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/ingeniousfrog/DeskTank/actions/workflows/ci.yml/badge.svg">
+  </a>
+  <img alt="Swift" src="https://img.shields.io/badge/Swift-6-orange">
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-14%2B-blue">
+  <a href="https://github.com/ingeniousfrog/DeskTank/releases">
+    <img alt="Release" src="https://img.shields.io/github/v/release/ingeniousfrog/DeskTank?label=release">
+  </a>
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
+</p>
 
 <p align="center">
   <img src="docs/assets/desktank-assets.svg" alt="DeskTank battlefield asset preview">
 </p>
+
+**Last Updated:** 2026-06-10
+
+## What It Does
+
+DeskTank launches a transparent SpriteKit battlefield over your macOS Desktop.
+Desktop files and folders become live obstacles, the battlefield reacts when
+you move desktop items, and the game runs from a small menu bar app instead of a
+normal window.
+
+The app icon, README logo, and packaged `.app` icon all use the same friendly
+blue tank mascot with a red flag.
+
+## Highlights
+
+| Feature | Details |
+| --- | --- |
+| Desktop battlefield | Files and folders on `~/Desktop` become walls, castles, and collision obstacles. |
+| Live map updates | Desktop changes are watched while the game is running. |
+| Menu bar app | Start, resume, view records, and quit from the macOS menu bar. |
+| Combat record | Tracks kills, current-run kills, wins, losses, and win rate. |
+| Real obstacle rules | The combat record panel is part of the map, so tanks and bullets cannot pass through it. |
+| DMG packaging | `scripts/package_app.sh` builds a shareable `.dmg` installer. |
 
 ## Install
 
@@ -18,32 +58,23 @@ Download the latest `.dmg` installer from
 [GitHub Releases](https://github.com/ingeniousfrog/DeskTank/releases). Drag
 `DeskTank.app` into Applications, then launch it from the macOS menu bar.
 
-## Current Gameplay
+macOS may ask for Finder automation permission so DeskTank can read desktop
+icon positions. If permission is denied, the game still runs with a stable
+fallback map.
 
-- `W`, `A`, `S`, `D`: move up, left, down, right
-- `J`: fire
-- `Space`: pause or resume
-- `R`: restart after victory or defeat
-- `Esc` or `Q`: close the battlefield overlay
-- `Command` + `Option` + `T`: show or hide the game overlay
+## Controls
 
-DeskTank runs as a menu bar app. Click the `DT` item in the macOS menu bar to
-see the combat record, start a new game, resume a hidden game, or quit the app.
-Quitting the app is only done from the menu bar.
+| Key | Action |
+| --- | --- |
+| `W`, `A`, `S`, `D` | Move up, left, down, right |
+| `J` | Fire |
+| `Space` | Pause or resume |
+| `R` | Restart after victory or defeat |
+| `Esc` or `Q` | Close the battlefield overlay |
+| `Command` + `Option` + `T` | Show or hide the game overlay |
 
-The in-game HUD shows the current state, remaining enemies, base health, color
-legend, and controls. The player tank is blue, enemy tanks are red, and the base
-is yellow. It also includes a persistent combat record with total kills, current
-run kills, wins, losses, and win rate. The HUD is part of the battlefield: tanks
-and bullets cannot pass through it.
-
-The app starts the overlay immediately when launched. Desktop files and folders
-are scanned as obstacles. DeskTank first tries to read real Finder desktop icon
-positions with AppleScript; if macOS denies automation access or Finder does not
-return positions, it falls back to a stable right-to-left grid layout.
-
-Desktop folders render as castle obstacles, while desktop files render as wall
-segments.
+Quitting the app is only done from the menu bar. Closing the battlefield keeps
+DeskTank running in the background so the menu action becomes Resume.
 
 ## Architecture
 
@@ -77,40 +108,36 @@ flowchart TD
     GameStats --> StatsMenu
     GameStats --> BattlePanel
 
+    Logo["docs/assets/desktank-logo.png"] --> Iconset["AppIcon.iconset"]
+    Iconset --> AppIcon["AppIcon.icns"]
     Packaging["scripts/package_app.sh"] --> ReleaseBuild["swift build -c release"]
     ReleaseBuild --> AppBundle["DeskTank.app"]
-    AppIcon["Cute Tank App Icon"] --> AppBundle
+    AppIcon --> AppBundle
     AppBundle --> DMG["DeskTank DMG Installer"]
     DMG --> Releases["GitHub Releases"]
 ```
 
-## Run
+## Development
+
+Run locally:
 
 ```bash
 swift run DeskTank
 ```
 
-macOS may ask for Finder automation permission so DeskTank can read desktop icon
-positions. If permission is denied, the game still runs with the fallback map.
-
-## Test
+Run tests:
 
 ```bash
 swift test
 ```
 
-## Build
+Build:
 
 ```bash
 swift build
 ```
 
-## Distribution
-
-For development, run with SwiftPM. For sharing with other Mac users, package a
-signed `.app` bundle and distribute that app inside a `.dmg` installer image.
-The `.app` is the actual application; the `.dmg` is the convenient delivery
-container.
+Package a DMG:
 
 ```bash
 scripts/package_app.sh 0.1.0
@@ -118,6 +145,10 @@ scripts/package_app.sh 0.1.0
 
 ## Project Layout
 
-- `Sources/DeskTankCore`: testable game rules, map geometry, collision, movement
-- `Sources/DeskTank`: AppKit window, global hotkey, desktop scanning, SpriteKit scene
-- `Tests/DeskTankCoreTests`: unit tests for map and rules behavior
+| Path | Purpose |
+| --- | --- |
+| `Sources/DeskTankCore` | Testable game rules, map geometry, collision, movement, and stats models |
+| `Sources/DeskTank` | AppKit window, menu bar controller, global hotkey, desktop scanning, SpriteKit scene |
+| `Tests/DeskTankCoreTests` | Unit tests for rules, map behavior, and combat stats |
+| `docs/assets` | README artwork and the app logo source used during packaging |
+| `scripts/package_app.sh` | Release build, app bundle creation, icon generation, signing, and DMG packaging |
