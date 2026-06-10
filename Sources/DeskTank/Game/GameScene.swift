@@ -67,6 +67,11 @@ final class GameScene: SKScene {
         watcher?.start()
     }
 
+    override func willMove(from view: SKView) {
+        watcher?.stop()
+        watcher = nil
+    }
+
     func start() {
         phase = phase == .ready ? .running : phase
         overlayNode.isHidden = phase == .running
@@ -147,9 +152,15 @@ final class GameScene: SKScene {
     private func reloadDesktopMap() {
         let bounds = Rect(origin: Point(x: 0, y: 0), size: Size(width: size.width, height: size.height))
         let items = scanner.scan(screenFrame: CGRect(origin: .zero, size: size))
-        map = MapModel(bounds: bounds)
+        let nextMap = MapModel(bounds: bounds)
             .replacingDesktopItems(items)
             .includingStaticObstacles([statsPanelObstacle()])
+
+        guard nextMap != map else {
+            return
+        }
+
+        map = nextMap
         player = Tank(
             id: player.id,
             frame: map.nearestOpenFrame(to: player.frame),
