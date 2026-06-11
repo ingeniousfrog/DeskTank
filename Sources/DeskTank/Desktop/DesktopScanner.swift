@@ -59,8 +59,10 @@ struct DesktopScanner: DesktopScanning {
         let script = """
         tell application "Finder"
             set outputLines to {}
-            repeat with desktopItem in every item of desktop
+            set desktopCount to count of items of desktop
+            repeat with i from 1 to desktopCount
                 try
+                    set desktopItem to item i of desktop
                     set itemName to name of desktopItem as text
                     set itemPosition to desktop position of desktopItem
                     set xPos to item 1 of itemPosition
@@ -95,7 +97,10 @@ struct DesktopScanner: DesktopScanning {
 
                 let name = String(parts[0])
                 result[name] = CGRect(
-                    origin: CGPoint(x: x, y: CGFloat(y)),
+                    origin: CGPoint(
+                        x: CGFloat(x) - iconSize.width / 2,
+                        y: CGFloat(y) - iconSize.height / 2
+                    ),
                     size: iconSize
                 ).offsetBy(dx: screenFrame.minX, dy: screenFrame.minY)
             }

@@ -8,7 +8,7 @@ final class DesktopWatcher {
     private var pendingChange: DispatchWorkItem?
     private let onChange: @MainActor () -> Void
 
-    init(pollInterval: TimeInterval = 1.5, onChange: @escaping @MainActor () -> Void) {
+    init(pollInterval: TimeInterval = 4.0, onChange: @escaping @MainActor () -> Void) {
         self.pollInterval = pollInterval
         self.onChange = onChange
     }

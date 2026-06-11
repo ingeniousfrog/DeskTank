@@ -24,6 +24,8 @@ final class GameScene: SKScene {
     private let statsStore = GameStatsStore()
     private var stats = GameStats()
     private let onExitRequested: () -> Void
+    private let desktopScanQueue = DispatchQueue(label: "com.desktank.desktop-scan", qos: .utility)
+    private var isScanningDesktop = false
 
     init(
         size: CGSize,
@@ -150,8 +152,25 @@ final class GameScene: SKScene {
     }
 
     private func reloadDesktopMap() {
+        guard !isScanningDesktop else {
+            return
+        }
+
+        isScanningDesktop = true
+        let screenFrame = CGRect(origin: .zero, size: size)
+        let scanner = self.scanner
+
+        desktopScanQueue.async { [weak self] in
+            let items = scanner.scan(screenFrame: screenFrame)
+            Task { @MainActor [weak self] in
+                self?.isScanningDesktop = false
+                self?.applyDesktopItems(items)
+            }
+        }
+    }
+
+    private func applyDesktopItems(_ items: [DesktopItem]) {
         let bounds = Rect(origin: Point(x: 0, y: 0), size: Size(width: size.width, height: size.height))
-        let items = scanner.scan(screenFrame: CGRect(origin: .zero, size: size))
         let nextMap = MapModel(bounds: bounds)
             .replacingDesktopItems(items)
             .includingStaticObstacles([statsPanelObstacle()])

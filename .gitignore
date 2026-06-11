@@ -2,5 +2,6 @@
 .swiftpm/
 DerivedData/
 dist/
+docs/wechat-article.md
 *.xcodeproj/project.xcworkspace/xcuserdata/
 *.xcuserstate

@@ -4,6 +4,7 @@ import SpriteKit
 @MainActor
 final class GameWindowController {
     private var window: NSWindow?
+    private weak var gameView: SKView?
     private var gameScene: GameScene?
     private var hasStartedGame = false
 
@@ -26,9 +27,14 @@ final class GameWindowController {
             createWindow(screen: screen)
         }
 
+        NSApp.activate(ignoringOtherApps: true)
         refreshFrame(screen: screen)
         window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        window?.orderFrontRegardless()
+        focusGameView()
+        DispatchQueue.main.async { [weak self] in
+            self?.focusGameView()
+        }
         gameScene?.start()
         hasStartedGame = true
         onVisibilityChanged?()
@@ -47,6 +53,7 @@ final class GameWindowController {
     func startNewGame() {
         show()
         gameScene?.startNewGame()
+        focusGameView()
     }
 
     func resumeGame() {
@@ -80,12 +87,21 @@ final class GameWindowController {
 
         window.contentView = skView
         self.window = window
+        gameView = skView
         gameScene = scene
     }
 
     private func refreshFrame(screen: NSScreen) {
         window?.setFrame(screen.frame, display: true)
         gameScene?.size = screen.frame.size
+    }
+
+    private func focusGameView() {
+        guard let view = gameView else {
+            return
+        }
+
+        window?.makeFirstResponder(view)
     }
 }
 
